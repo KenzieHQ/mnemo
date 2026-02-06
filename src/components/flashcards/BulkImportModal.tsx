@@ -26,7 +26,6 @@ import {
   Badge,
   Alert,
   AlertIcon,
-  useColorModeValue,
   Icon,
   Divider,
   Tabs,
@@ -80,9 +79,9 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({
   const [isImporting, setIsImporting] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
 
-  const cardBg = useColorModeValue('white', 'gray.800');
-  const subtleText = useColorModeValue('gray.600', 'gray.400');
-  const errorBg = useColorModeValue('red.50', 'red.900');
+  const cardBg = 'white';
+  const subtleText = 'gray.600';
+  const errorBg = 'red.50';
 
   // Parse the input text into cards
   const parsedCards: ParsedCard[] = useMemo(() => {
@@ -310,7 +309,7 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({
                     </FormControl>
 
                     {/* Format Help */}
-                    <Box p={4} bg={useColorModeValue('gray.50', 'gray.700')} borderRadius="md">
+                    <Box p={4} bg="gray.50" borderRadius="md">
                       <Text fontWeight="medium" mb={2}>Format Guide</Text>
                       {cardType === 'basic' ? (
                         <>

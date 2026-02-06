@@ -1,8 +1,9 @@
 import { extendTheme, type ThemeConfig } from '@chakra-ui/react';
 
+// Light mode only configuration
 const config: ThemeConfig = {
-  initialColorMode: 'system',
-  useSystemColorMode: true,
+  initialColorMode: 'light',
+  useSystemColorMode: false,
 };
 
 export const theme = extendTheme({
@@ -26,11 +27,12 @@ export const theme = extendTheme({
     },
   },
   styles: {
-    global: (props: { colorMode: 'light' | 'dark' }) => ({
+    global: {
       body: {
-        bg: props.colorMode === 'dark' ? 'gray.900' : 'gray.50',
+        bg: 'gray.50',
+        color: 'gray.800',
       },
-    }),
+    },
   },
   components: {
     Button: {
@@ -48,13 +50,13 @@ export const theme = extendTheme({
       },
     },
     Card: {
-      baseStyle: (props: { colorMode: 'light' | 'dark' }) => ({
+      baseStyle: {
         container: {
-          bg: props.colorMode === 'dark' ? 'gray.800' : 'white',
+          bg: 'white',
           borderRadius: 'xl',
           boxShadow: 'sm',
         },
-      }),
+      },
     },
     Input: {
       defaultProps: {

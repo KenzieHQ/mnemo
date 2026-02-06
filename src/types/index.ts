@@ -14,6 +14,7 @@ export interface Card {
   type: CardType;
   front: string;
   back: string;
+  tags: string[]; // Tags for organization
   clozeIndex?: number; // For cloze cards, which deletion is this
   easeFactor: number; // Difficulty coefficient (default 2.5)
   interval: number; // Current interval in minutes
@@ -40,6 +41,16 @@ export interface Deck {
   updatedAt: number;
 }
 
+// Customization settings for flashcard appearance
+export interface CardCustomization {
+  fontSize: 'small' | 'medium' | 'large' | 'x-large';
+  lineSpacing: 'compact' | 'normal' | 'relaxed' | 'spacious';
+  cardPadding: 'compact' | 'normal' | 'spacious';
+  cardBgColor: 'white' | 'gray.50' | 'blue.50' | 'green.50' | 'orange.50' | 'purple.50';
+  clozeBgColor: 'yellow.100' | 'blue.100' | 'green.100' | 'orange.100' | 'pink.100' | 'purple.100';
+  clozeTextColor: 'blue.600' | 'gray.800' | 'green.600' | 'purple.600' | 'orange.600';
+}
+
 // User settings
 export interface UserSettings {
   id: string;
@@ -52,7 +63,8 @@ export interface UserSettings {
   maxInterval: number; // Maximum interval in days
   learningSteps: number[]; // Learning steps in minutes
   graduatingInterval: number; // First interval after graduating in days
-  theme: 'light' | 'dark' | 'system';
+  // Customization
+  cardCustomization: CardCustomization;
 }
 
 // Study session
@@ -124,3 +136,31 @@ export interface ExportOptions {
   includeHeader: boolean;
   deckIds: string[];
 }
+
+// Card sorting options
+export type CardSortField = 'createdAt' | 'updatedAt' | 'nextReview' | 'easeFactor' | 'front' | 'interval';
+export type SortDirection = 'asc' | 'desc';
+
+export interface CardSortOption {
+  field: CardSortField;
+  direction: SortDirection;
+}
+
+// Card filter options
+export interface CardFilterOptions {
+  deckId: string | 'all';
+  cardType: CardType | 'all';
+  learningState: LearningState | 'all';
+  tags: string[];
+  searchQuery: string;
+}
+
+// Default customization values
+export const DEFAULT_CARD_CUSTOMIZATION: CardCustomization = {
+  fontSize: 'medium',
+  lineSpacing: 'normal',
+  cardPadding: 'normal',
+  cardBgColor: 'white',
+  clozeBgColor: 'yellow.100',
+  clozeTextColor: 'blue.600',
+};

@@ -1,4 +1,5 @@
 import type { Card, Rating, LearningState, UserSettings, StudyCard } from '@/types';
+import { DEFAULT_CARD_CUSTOMIZATION } from '@/types';
 
 // Default settings for calculations
 const DEFAULT_SETTINGS: UserSettings = {
@@ -12,7 +13,7 @@ const DEFAULT_SETTINGS: UserSettings = {
   maxInterval: 365,
   learningSteps: [1, 10], // 1 min, 10 min
   graduatingInterval: 1, // 1 day
-  theme: 'system',
+  cardCustomization: DEFAULT_CARD_CUSTOMIZATION,
 };
 
 // Minimum ease factor
@@ -292,6 +293,7 @@ export function createCard(
     type,
     front,
     back,
+    tags: [],
     easeFactor: settings.defaultEaseFactor,
     interval: 0,
     repetitions: 0,

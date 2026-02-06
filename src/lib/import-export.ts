@@ -95,6 +95,7 @@ export async function importCards(
       type: isCloze ? 'cloze' : 'basic',
       front,
       back,
+      tags: [],
       easeFactor: 2.5,
       interval: 0,
       repetitions: 0,

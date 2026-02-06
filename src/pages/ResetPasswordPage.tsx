@@ -12,7 +12,6 @@ import {
   InputRightElement,
   Stack,
   Text,
-  useColorModeValue,
   VStack,
   Alert,
   AlertIcon,
@@ -35,9 +34,9 @@ export const ResetPasswordPage: React.FC = () => {
   const { updatePassword } = useAuth();
   const navigate = useNavigate();
 
-  const bgColor = useColorModeValue('white', 'gray.800');
-  const borderColor = useColorModeValue('gray.200', 'gray.700');
-  const mutedColor = useColorModeValue('gray.600', 'gray.400');
+  const bgColor = 'white';
+  const borderColor = 'gray.200';
+  const mutedColor = 'gray.600';
 
   const validatePassword = (password: string) => {
     return password.length >= 8;

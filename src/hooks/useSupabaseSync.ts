@@ -183,6 +183,7 @@ export const useSupabaseSync = () => {
             type: card.card_type as 'basic' | 'cloze',
             front: card.front_content,
             back: card.back_content,
+            tags: [],
             easeFactor: reviewState?.ease_factor ?? 2.5,
             interval: reviewState?.interval ?? 0,
             repetitions: reviewState?.repetition_count ?? 0,
@@ -201,6 +202,7 @@ export const useSupabaseSync = () => {
 
       if (settingsRes.data) {
         const settings = settingsRes.data as UserSettingsRow;
+        const currentSettings = await db.settings.get('default');
         const localSettings: UserSettings = {
           id: 'default',
           defaultNewCardsPerDay: settings.new_cards_per_day,
@@ -212,7 +214,14 @@ export const useSupabaseSync = () => {
           maxInterval: 365,
           learningSteps: settings.learn_steps,
           graduatingInterval: settings.graduating_interval,
-          theme: settings.theme as 'light' | 'dark' | 'system',
+          cardCustomization: currentSettings?.cardCustomization ?? {
+            fontSize: 'medium',
+            lineSpacing: 'normal',
+            cardPadding: 'normal',
+            cardBgColor: 'white',
+            clozeBgColor: 'yellow.100',
+            clozeTextColor: 'blue.600',
+          },
         };
         await db.settings.put(localSettings);
       }

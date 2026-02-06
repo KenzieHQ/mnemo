@@ -12,7 +12,6 @@ import {
   Icon,
   HStack,
   VStack,
-  useColorModeValue,
   Button,
   Progress,
 } from '@chakra-ui/react';
@@ -45,9 +44,9 @@ export default function Dashboard() {
   const totalDue = useTotalDueCount();
   const totalCards = useTotalCards();
 
-  const cardBg = useColorModeValue('white', 'gray.800');
-  const borderColor = useColorModeValue('gray.200', 'gray.700');
-  const subtleText = useColorModeValue('gray.600', 'gray.400');
+  const cardBg = 'white';
+  const borderColor = 'gray.200';
+  const subtleText = 'gray.600';
 
   // Calculate meaningful helper text based on actual data
   const getStreakHelperText = () => {

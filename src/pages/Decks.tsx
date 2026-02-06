@@ -11,7 +11,6 @@ import {
   VStack,
   Icon,
   IconButton,
-  useColorModeValue,
   Input,
   InputGroup,
   InputLeftElement,
@@ -108,9 +107,9 @@ export default function Decks() {
     color: 'blue.100',
   });
 
-  const cardBg = useColorModeValue('white', 'gray.800');
-  const borderColor = useColorModeValue('gray.200', 'gray.700');
-  const subtleText = useColorModeValue('gray.600', 'gray.400');
+  const cardBg = 'white';
+  const borderColor = 'gray.200';
+  const subtleText = 'gray.600';
 
   // Filter decks
   const filteredDecks = decks?.filter(deck => {
@@ -363,7 +362,7 @@ export default function Decks() {
           borderStyle="dashed"
           cursor="pointer"
           onClick={onCreateOpen}
-          _hover={{ borderColor: 'blue.500', bg: useColorModeValue('blue.50', 'gray.700') }}
+          _hover={{ borderColor: 'blue.500', bg: 'blue.50' }}
           transition="all 0.2s"
         >
           <CardBody>

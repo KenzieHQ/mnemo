@@ -8,7 +8,6 @@ import {
   HStack,
   VStack,
   Icon,
-  useColorModeValue,
   Card,
   CardBody,
   SimpleGrid,
@@ -93,9 +92,9 @@ export default function DeckDetail() {
     type: 'basic' as CardTypeEnum,
   });
 
-  const cardBg = useColorModeValue('white', 'gray.800');
-  const borderColor = useColorModeValue('gray.200', 'gray.700');
-  const subtleText = useColorModeValue('gray.600', 'gray.400');
+  const cardBg = 'white';
+  const borderColor = 'gray.200';
+  const subtleText = 'gray.600';
 
   if (!deck) {
     return (
@@ -154,6 +153,7 @@ export default function DeckDetail() {
           type: 'cloze',
           front: formData.front.trim(),
           back: formData.back.trim() || formData.front.trim(),
+          tags: [],
           clozeIndex: i,
           easeFactor: settings?.defaultEaseFactor ?? 2.5,
           interval: 0,
@@ -180,6 +180,7 @@ export default function DeckDetail() {
         type: 'basic',
         front: formData.front.trim(),
         back: formData.back.trim(),
+        tags: [],
         easeFactor: settings?.defaultEaseFactor ?? 2.5,
         interval: 0,
         repetitions: 0,

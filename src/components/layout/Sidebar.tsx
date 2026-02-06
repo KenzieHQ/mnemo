@@ -5,7 +5,6 @@ import {
   VStack,
   Icon,
   Text,
-  useColorModeValue,
   IconButton,
   useDisclosure,
   Drawer,
@@ -42,12 +41,12 @@ function NavContent() {
   const location = useLocation();
   const navigate = useNavigate();
   
-  const bgColor = useColorModeValue('white', 'gray.800');
-  const activeBg = useColorModeValue('blue.50', 'blue.900');
-  const activeColor = useColorModeValue('blue.600', 'blue.200');
-  const hoverBg = useColorModeValue('gray.100', 'gray.700');
-  const textColor = useColorModeValue('gray.600', 'gray.400');
-  const borderColor = useColorModeValue('gray.200', 'gray.700');
+  const bgColor = 'white';
+  const activeBg = 'blue.50';
+  const activeColor = 'blue.600';
+  const hoverBg = 'gray.100';
+  const textColor = 'gray.600';
+  const borderColor = 'gray.200';
 
   return (
     <Flex
@@ -117,7 +116,7 @@ function NavContent() {
 
 export default function Sidebar() {
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const bgColor = useColorModeValue('white', 'gray.800');
+  const bgColor = 'white';
 
   return (
     <>

@@ -162,6 +162,7 @@ export function createClozeCards(
       type: 'cloze' as CardType,
       front: text,
       back: back || text,
+      tags: [],
       clozeIndex: i,
       easeFactor: baseCardProps.easeFactor ?? 2.5,
       interval: 0,

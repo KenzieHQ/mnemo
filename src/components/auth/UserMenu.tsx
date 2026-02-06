@@ -10,7 +10,6 @@ import {
   HStack,
   VStack,
   Text,
-  useColorModeValue,
   Icon,
   useDisclosure,
   Modal,
@@ -41,9 +40,9 @@ export const UserMenu: React.FC = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const toast = useToast();
 
-  const bgColor = useColorModeValue('white', 'gray.800');
-  const borderColor = useColorModeValue('gray.200', 'gray.700');
-  const mutedColor = useColorModeValue('gray.600', 'gray.400');
+  const bgColor = 'white';
+  const borderColor = 'gray.200';
+  const mutedColor = 'gray.600';
 
   if (!isConfigured || !user) {
     return (
@@ -125,7 +124,7 @@ export const UserMenu: React.FC = () => {
           px={4}
           py={4}
           justifyContent="flex-start"
-          _hover={{ bg: useColorModeValue('gray.100', 'gray.700') }}
+          _hover={{ bg: 'gray.100' }}
         >
           <HStack spacing={3} w="full">
             <Avatar size="sm" name={displayName} bg="blue.500" />

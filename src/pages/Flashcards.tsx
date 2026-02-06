@@ -6,7 +6,6 @@ import {
   VStack,
   HStack,
   Icon,
-  useColorModeValue,
   Card,
   CardBody,
   Input,
@@ -107,10 +106,10 @@ export default function Flashcards() {
     return db.cards.toArray();
   });
 
-  const cardBg = useColorModeValue('white', 'gray.800');
-  const borderColor = useColorModeValue('gray.200', 'gray.700');
-  const subtleText = useColorModeValue('gray.600', 'gray.400');
-  const selectionBg = useColorModeValue('blue.50', 'blue.900');
+  const cardBg = 'white';
+  const borderColor = 'gray.200';
+  const subtleText = 'gray.600';
+  const selectionBg = 'blue.50';
 
   // Filter cards
   const filteredCards = allCards?.filter(card => {
@@ -174,6 +173,7 @@ export default function Flashcards() {
           type: 'cloze',
           front: formData.front.trim(),
           back: formData.back.trim() || formData.front.trim(),
+          tags: [],
           clozeIndex: i,
           easeFactor: settings?.defaultEaseFactor ?? 2.5,
           interval: 0,
@@ -200,6 +200,7 @@ export default function Flashcards() {
         type: 'basic',
         front: formData.front.trim(),
         back: formData.back.trim(),
+        tags: [],
         easeFactor: settings?.defaultEaseFactor ?? 2.5,
         interval: 0,
         repetitions: 0,
@@ -283,6 +284,7 @@ export default function Flashcards() {
         type: 'basic' as CardTypeEnum,
         front: card.front,
         back: card.back,
+        tags: [],
         easeFactor: settings?.defaultEaseFactor ?? 2.5,
         interval: 0,
         repetitions: 0,

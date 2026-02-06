@@ -1,5 +1,6 @@
 import Dexie, { Table } from 'dexie';
 import type { Card, Deck, UserSettings, StudySession, ReviewLog, DailyStats } from '@/types';
+import { DEFAULT_CARD_CUSTOMIZATION } from '@/types';
 
 export class MnemoDatabase extends Dexie {
   cards!: Table<Card>;
@@ -12,6 +13,24 @@ export class MnemoDatabase extends Dexie {
   constructor() {
     super('mnemo');
     
+    // Version 2 adds tags to cards
+    this.version(2).stores({
+      cards: 'id, deckId, type, learningState, nextReview, createdAt, *tags',
+      decks: 'id, parentId, name, createdAt',
+      settings: 'id',
+      sessions: 'id, deckId, startedAt',
+      reviewLogs: 'id, cardId, deckId, reviewedAt',
+      dailyStats: 'id, date',
+    }).upgrade(tx => {
+      // Migrate existing cards to have empty tags array
+      return tx.table('cards').toCollection().modify(card => {
+        if (!card.tags) {
+          card.tags = [];
+        }
+      });
+    });
+    
+    // Keep version 1 for initial structure
     this.version(1).stores({
       cards: 'id, deckId, type, learningState, nextReview, createdAt',
       decks: 'id, parentId, name, createdAt',
@@ -41,7 +60,12 @@ export async function initializeDatabase(): Promise<void> {
       maxInterval: 365, // 1 year max
       learningSteps: [1, 10], // 1 min, 10 min
       graduatingInterval: 1, // 1 day
-      theme: 'system',
+      cardCustomization: DEFAULT_CARD_CUSTOMIZATION,
+    });
+  } else if (!existingSettings.cardCustomization) {
+    // Migrate existing settings to add customization
+    await db.settings.update('default', {
+      cardCustomization: DEFAULT_CARD_CUSTOMIZATION,
     });
   }
 }

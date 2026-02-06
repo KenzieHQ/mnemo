@@ -8,7 +8,6 @@ import {
   HStack,
   VStack,
   Icon,
-  useColorModeValue,
   Card,
   CardBody,
   Progress,
@@ -25,6 +24,8 @@ import {
   Eye,
   Clock,
   Shuffle,
+  Maximize2,
+  Minimize2,
 } from 'lucide-react';
 import { useDeckWithStats, useSettings } from '@/hooks/useData';
 import { db, getDueCards, getNewCards, updateTodayStats } from '@/db/database';
@@ -35,7 +36,40 @@ import {
   getReinsertPosition 
 } from '@/lib/spaced-repetition';
 import { parseClozeForDisplay, type ClozePart } from '@/lib/card-utils';
-import type { StudyCard, Rating } from '@/types';
+import type { StudyCard, Rating, CardCustomization } from '@/types';
+import { DEFAULT_CARD_CUSTOMIZATION } from '@/types';
+
+// Helper function to get customization style values
+const getCustomizationStyles = (customization: CardCustomization) => {
+  const fontSizeMap = {
+    'small': '14px',
+    'medium': '16px',
+    'large': '18px',
+    'x-large': '20px',
+  };
+  
+  const lineSpacingMap = {
+    'compact': 1.2,
+    'normal': 1.5,
+    'relaxed': 1.8,
+    'spacious': 2.0,
+  };
+  
+  const paddingMap = {
+    'compact': 4,
+    'normal': 6,
+    'spacious': 8,
+  };
+  
+  return {
+    fontSize: fontSizeMap[customization.fontSize],
+    lineHeight: lineSpacingMap[customization.lineSpacing],
+    padding: paddingMap[customization.cardPadding],
+    cardBgColor: customization.cardBgColor,
+    clozeBgColor: customization.clozeBgColor,
+    clozeTextColor: customization.clozeTextColor,
+  };
+};
 
 export default function Study() {
   const { deckId } = useParams<{ deckId: string }>();
@@ -45,10 +79,15 @@ export default function Study() {
   const deck = useDeckWithStats(deckId);
   const settings = useSettings();
   
+  // Get card customization from settings
+  const customization = settings?.cardCustomization ?? DEFAULT_CARD_CUSTOMIZATION;
+  const customStyles = getCustomizationStyles(customization);
+  
   const [queue, setQueue] = useState<StudyCard[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showAnswer, setShowAnswer] = useState(false);
   const [isShuffled, setIsShuffled] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const [sessionStats, setSessionStats] = useState({
     reviewed: 0,
     correct: 0,
@@ -58,13 +97,11 @@ export default function Study() {
   const [isLoading, setIsLoading] = useState(true);
   const [cardStartTime, setCardStartTime] = useState(Date.now());
 
-  const cardBg = useColorModeValue('white', 'gray.800');
-  const borderColor = useColorModeValue('gray.200', 'gray.700');
-  const subtleText = useColorModeValue('gray.600', 'gray.400');
-  const blankBg = useColorModeValue('blue.100', 'blue.900');
-  const blankColor = useColorModeValue('blue.700', 'blue.200');
-  const revealedBg = useColorModeValue('green.100', 'green.900');
-  const revealedColor = useColorModeValue('green.700', 'green.200');
+  const cardBg = 'white';
+  const borderColor = 'gray.200';
+  const subtleText = 'gray.600';
+  const revealedBg = 'green.100';
+  const revealedColor = 'green.700';
 
   // Fisher-Yates shuffle algorithm
   const shuffleArray = <T,>(array: T[]): T[] => {
@@ -206,10 +243,28 @@ export default function Study() {
     navigate(`/decks/${deckId}`);
   };
 
+  // Toggle fullscreen mode
+  const toggleFullscreen = useCallback(() => {
+    setIsFullscreen(prev => !prev);
+  }, []);
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+
+      // Fullscreen toggle with 'f' key, exit with Escape
+      if (e.key === 'f' || e.key === 'F') {
+        e.preventDefault();
+        toggleFullscreen();
+        return;
+      }
+      
+      if (e.key === 'Escape' && isFullscreen) {
+        e.preventDefault();
+        setIsFullscreen(false);
         return;
       }
 
@@ -242,7 +297,7 @@ export default function Study() {
 
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [showAnswer, handleRating]);
+  }, [showAnswer, handleRating, isFullscreen, toggleFullscreen]);
 
   // Render cloze part with styling
   const renderClozePart = (part: ClozePart, index: number) => {
@@ -253,8 +308,8 @@ export default function Study() {
             key={index}
             as="span"
             display="inline-block"
-            bg={blankBg}
-            color={blankColor}
+            bg={customStyles.clozeBgColor}
+            color={customStyles.clozeTextColor}
             px={2}
             py={0.5}
             mx={0.5}
@@ -369,41 +424,71 @@ export default function Study() {
   }
 
   return (
-    <Box maxW="800px" mx="auto">
-      {/* Header */}
-      <HStack mb={6}>
-        <IconButton
-          aria-label="Back"
-          icon={<Icon as={ArrowLeft} />}
-          variant="ghost"
-          onClick={() => navigate(`/decks/${deckId}`)}
-        />
-        <Box flex={1}>
-          <Heading size="md">{deck.name}</Heading>
-          <Text fontSize="sm" color={subtleText}>
-            {remaining} cards remaining
-          </Text>
-        </Box>
-        <HStack spacing={3}>
-          <Tooltip label={isShuffled ? 'Cards are shuffled' : 'Shuffle cards'}>
-            <Button
-              size="sm"
-              variant={isShuffled ? 'solid' : 'ghost'}
-              colorScheme={isShuffled ? 'purple' : 'gray'}
-              leftIcon={<Icon as={Shuffle} boxSize={4} />}
-              onClick={handleShuffleToggle}
-            >
-              Shuffle
-            </Button>
-          </Tooltip>
-          {currentCard.isNew && (
-            <Badge colorScheme="blue">New</Badge>
+    <Box 
+      maxW={isFullscreen ? "100%" : "800px"} 
+      mx="auto"
+      {...(isFullscreen && {
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 1000,
+        bg: cardBg,
+        p: 8,
+        overflowY: "auto",
+        display: "flex",
+        flexDirection: "column",
+      })}
+    >
+      {/* Fullscreen inner container */}
+      <Box maxW="900px" mx="auto" w="100%" flex={isFullscreen ? 1 : undefined}>
+        {/* Header */}
+        <HStack mb={6}>
+          {!isFullscreen && (
+            <IconButton
+              aria-label="Back"
+              icon={<Icon as={ArrowLeft} />}
+              variant="ghost"
+              onClick={() => navigate(`/decks/${deckId}`)}
+            />
           )}
-          <Badge colorScheme="gray">
-            {currentCard.learningState}
-          </Badge>
+          <Box flex={1}>
+            <Heading size="md">{deck.name}</Heading>
+            <Text fontSize="sm" color={subtleText}>
+              {remaining} cards remaining
+            </Text>
+          </Box>
+          <HStack spacing={3}>
+            <Tooltip label={isShuffled ? 'Cards are shuffled' : 'Shuffle cards'}>
+              <Button
+                size="sm"
+                variant={isShuffled ? 'solid' : 'ghost'}
+                colorScheme={isShuffled ? 'purple' : 'gray'}
+                leftIcon={<Icon as={Shuffle} boxSize={4} />}
+                onClick={handleShuffleToggle}
+              >
+                Shuffle
+              </Button>
+            </Tooltip>
+            <Tooltip label={isFullscreen ? 'Exit fullscreen (F or Esc)' : 'Fullscreen mode (F)'}>
+              <IconButton
+                aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+                icon={<Icon as={isFullscreen ? Minimize2 : Maximize2} boxSize={4} />}
+                size="sm"
+                variant="ghost"
+                onClick={toggleFullscreen}
+              />
+            </Tooltip>
+            {currentCard.isNew ? (
+              <Badge colorScheme="blue">NEW</Badge>
+            ) : (
+              <Badge colorScheme="gray">
+                {currentCard.learningState}
+              </Badge>
+            )}
+          </HStack>
         </HStack>
-      </HStack>
 
       {/* Progress */}
       <Progress 
@@ -416,17 +501,18 @@ export default function Study() {
 
       {/* Card */}
       <Card 
-        bg={cardBg} 
+        bg={customStyles.cardBgColor} 
         borderWidth="1px" 
         borderColor={borderColor}
         minH="400px"
         mb={6}
       >
-        <CardBody display="flex" flexDirection="column">
+        <CardBody display="flex" flexDirection="column" p={customStyles.padding}>
           {/* Question */}
           <VStack flex={1} justify="center" spacing={6} py={8}>
             <Text 
-              fontSize="xl" 
+              fontSize={customStyles.fontSize} 
+              lineHeight={customStyles.lineHeight}
               fontWeight="500" 
               textAlign="center"
               whiteSpace="pre-wrap"
@@ -438,7 +524,8 @@ export default function Study() {
               <>
                 <Box w="full" h="1px" bg={borderColor} />
                 <Text 
-                  fontSize="xl" 
+                  fontSize={customStyles.fontSize} 
+                  lineHeight={customStyles.lineHeight}
                   textAlign="center"
                   whiteSpace="pre-wrap"
                   color="green.500"
@@ -558,6 +645,7 @@ export default function Study() {
           </HStack>
         </CardBody>
       </Card>
+      </Box>
     </Box>
   );
 }

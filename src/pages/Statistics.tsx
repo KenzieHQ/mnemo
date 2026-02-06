@@ -12,7 +12,6 @@ import {
   Icon,
   HStack,
   VStack,
-  useColorModeValue,
   Select,
   Button,
   Progress,
@@ -62,9 +61,9 @@ export default function Statistics() {
     return reviewLogs > 0 || sessions > 0;
   });
 
-  const cardBg = useColorModeValue('white', 'gray.800');
-  const borderColor = useColorModeValue('gray.200', 'gray.700');
-  const subtleText = useColorModeValue('gray.600', 'gray.400');
+  const cardBg = 'white';
+  const borderColor = 'gray.200';
+  const subtleText = 'gray.600';
 
   // Check if this is a new user with no data
   const isNewUser = totalCards === 0 || totalCards === undefined;
@@ -89,7 +88,7 @@ export default function Statistics() {
               <VStack spacing={6} textAlign="center" maxW="400px">
                 <Box
                   p={4}
-                  bg={useColorModeValue('blue.50', 'blue.900')}
+                  bg="blue.50"
                   borderRadius="full"
                 >
                   <Icon as={BarChart3} boxSize={12} color="blue.500" />
