@@ -20,6 +20,7 @@ import {
   BarChart3,
   Settings,
   Menu,
+  Puzzle,
 } from 'lucide-react';
 import UserMenu from '../auth/UserMenu';
 
@@ -34,6 +35,7 @@ const navItems: NavItem[] = [
   { label: 'Decks', icon: Layers, path: '/decks' },
   { label: 'Flashcards', icon: BookOpen, path: '/flashcards' },
   { label: 'Statistics', icon: BarChart3, path: '/statistics' },
+  { label: 'Add-Ons', icon: Puzzle, path: '/addons' },
   { label: 'Settings', icon: Settings, path: '/settings' },
 ];
 

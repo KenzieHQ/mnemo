@@ -17,6 +17,7 @@ import {
   Progress,
   Flex,
   Center,
+  Tooltip,
 } from '@chakra-ui/react';
 import { 
   Flame, 
@@ -28,7 +29,7 @@ import {
   Calendar,
   BarChart3,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   useStreak, 
@@ -41,6 +42,7 @@ import {
 } from '@/hooks/useData';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/db/database';
+import { isAddOnEnabled } from './AddOns';
 
 export default function Statistics() {
   const navigate = useNavigate();
@@ -529,6 +531,201 @@ export default function Statistics() {
           </CardBody>
         </Card>
       </SimpleGrid>
+
+      {/* Study Heatmap - Only show when add-on is enabled */}
+      {isAddOnEnabled('study-heatmap') && <StudyHeatmap />}
     </Box>
+  );
+}
+
+// Study Heatmap Component
+function StudyHeatmap() {
+  const cardBg = 'white';
+  const borderColor = 'gray.200';
+  
+  // Get review logs for the past year
+  const reviewLogs = useLiveQuery(async () => {
+    const oneYearAgo = new Date();
+    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+    return db.reviewLogs.where('reviewedAt').above(oneYearAgo).toArray();
+  }, []);
+
+  // Generate heatmap data
+  const heatmapData = useMemo(() => {
+    const data: Map<string, number> = new Map();
+    
+    // Initialize all days in the past year with 0
+    const today = new Date();
+    for (let i = 0; i < 365; i++) {
+      const date = new Date(today);
+      date.setDate(date.getDate() - i);
+      const dateStr = date.toISOString().split('T')[0];
+      data.set(dateStr, 0);
+    }
+    
+    // Count reviews per day
+    if (reviewLogs) {
+      reviewLogs.forEach(log => {
+        const dateStr = new Date(log.reviewedAt).toISOString().split('T')[0];
+        data.set(dateStr, (data.get(dateStr) || 0) + 1);
+      });
+    }
+    
+    return data;
+  }, [reviewLogs]);
+
+  // Get color based on review count
+  const getColor = (count: number): string => {
+    if (count === 0) return '#ebedf0';
+    if (count <= 5) return '#9be9a8';
+    if (count <= 15) return '#40c463';
+    if (count <= 30) return '#30a14e';
+    return '#216e39';
+  };
+
+  // Generate weeks for display (last 52 weeks)
+  const weeks = useMemo(() => {
+    const result: { date: Date; dateStr: string; count: number }[][] = [];
+    const today = new Date();
+    
+    // Start from the beginning of the current week (Sunday)
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - today.getDay());
+    
+    // Go back 52 weeks
+    for (let week = 51; week >= 0; week--) {
+      const weekData: { date: Date; dateStr: string; count: number }[] = [];
+      for (let day = 0; day < 7; day++) {
+        const date = new Date(startOfWeek);
+        date.setDate(startOfWeek.getDate() - (week * 7) + day);
+        const dateStr = date.toISOString().split('T')[0];
+        weekData.push({
+          date,
+          dateStr,
+          count: heatmapData.get(dateStr) || 0,
+        });
+      }
+      result.push(weekData);
+    }
+    
+    return result;
+  }, [heatmapData]);
+
+  // Get month labels
+  const monthLabels = useMemo(() => {
+    const labels: { label: string; weekIndex: number }[] = [];
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    let lastMonth = -1;
+    
+    weeks.forEach((week, index) => {
+      const month = week[0].date.getMonth();
+      if (month !== lastMonth) {
+        labels.push({ label: months[month], weekIndex: index });
+        lastMonth = month;
+      }
+    });
+    
+    return labels;
+  }, [weeks]);
+
+  const totalReviews = useMemo(() => {
+    let total = 0;
+    heatmapData.forEach(count => total += count);
+    return total;
+  }, [heatmapData]);
+
+  const activeDays = useMemo(() => {
+    let count = 0;
+    heatmapData.forEach(reviews => { if (reviews > 0) count++; });
+    return count;
+  }, [heatmapData]);
+
+  return (
+    <Card bg={cardBg} borderColor={borderColor} borderWidth="1px" mt={6}>
+      <CardBody>
+        <HStack justify="space-between" mb={4}>
+          <Heading size="md">Study Heatmap</Heading>
+          <HStack spacing={4}>
+            <Text fontSize="sm" color="gray.600">
+              {totalReviews.toLocaleString()} reviews in the last year
+            </Text>
+            <Text fontSize="sm" color="gray.600">
+              {activeDays} active days
+            </Text>
+          </HStack>
+        </HStack>
+        
+        <Box overflowX="auto" pb={2}>
+          {/* Month labels */}
+          <Flex mb={1} ml="30px">
+            {monthLabels.map(({ label, weekIndex }) => (
+              <Text
+                key={`${label}-${weekIndex}`}
+                fontSize="xs"
+                color="gray.500"
+                position="absolute"
+                left={`${30 + weekIndex * 14}px`}
+              >
+                {label}
+              </Text>
+            ))}
+          </Flex>
+          
+          <Flex mt={5}>
+            {/* Day labels */}
+            <VStack spacing={0} mr={2} align="flex-end">
+              <Text fontSize="xs" color="gray.500" h="14px"></Text>
+              <Text fontSize="xs" color="gray.500" h="14px">Mon</Text>
+              <Text fontSize="xs" color="gray.500" h="14px"></Text>
+              <Text fontSize="xs" color="gray.500" h="14px">Wed</Text>
+              <Text fontSize="xs" color="gray.500" h="14px"></Text>
+              <Text fontSize="xs" color="gray.500" h="14px">Fri</Text>
+              <Text fontSize="xs" color="gray.500" h="14px"></Text>
+            </VStack>
+            
+            {/* Heatmap grid */}
+            <Flex gap="2px">
+              {weeks.map((week, weekIndex) => (
+                <VStack key={weekIndex} spacing="2px">
+                  {week.map((day) => (
+                    <Tooltip
+                      key={day.dateStr}
+                      label={`${day.count} reviews on ${day.date.toLocaleDateString('en-US', { 
+                        weekday: 'short',
+                        month: 'short', 
+                        day: 'numeric',
+                        year: 'numeric'
+                      })}`}
+                      fontSize="xs"
+                      hasArrow
+                    >
+                      <Box
+                        w="12px"
+                        h="12px"
+                        bg={getColor(day.count)}
+                        borderRadius="2px"
+                        cursor="pointer"
+                        _hover={{ outline: '1px solid', outlineColor: 'gray.400' }}
+                      />
+                    </Tooltip>
+                  ))}
+                </VStack>
+              ))}
+            </Flex>
+          </Flex>
+          
+          {/* Legend */}
+          <Flex justify="flex-end" align="center" mt={3} gap={1}>
+            <Text fontSize="xs" color="gray.500" mr={1}>Less</Text>
+            <Box w="12px" h="12px" bg="#ebedf0" borderRadius="2px" />
+            <Box w="12px" h="12px" bg="#9be9a8" borderRadius="2px" />
+            <Box w="12px" h="12px" bg="#40c463" borderRadius="2px" />
+            <Box w="12px" h="12px" bg="#30a14e" borderRadius="2px" />
+            <Box w="12px" h="12px" bg="#216e39" borderRadius="2px" />
+            <Text fontSize="xs" color="gray.500" ml={1}>More</Text>
+          </Flex>
+        </Box>
+      </CardBody>
+    </Card>
   );
 }

@@ -22,6 +22,11 @@ import {
   Clock,
   Play,
   Layers,
+  BookOpen,
+  Code,
+  Languages,
+  FlaskConical,
+  History,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -33,6 +38,29 @@ import {
   useTotalDueCount,
   useTotalCards,
 } from '@/hooks/useData';
+
+// Map icon names to components
+const deckIcons: Record<string, React.ElementType> = {
+  layers: Layers,
+  book: BookOpen,
+  code: Code,
+  languages: Languages,
+  flask: FlaskConical,
+  history: History,
+};
+
+// Map deck colors to icon colors
+const getIconColor = (deckColor: string): string => {
+  const colorMap: Record<string, string> = {
+    'blue.100': 'blue.600',
+    'green.100': 'green.600',
+    'orange.100': 'orange.600',
+    'purple.100': 'purple.600',
+    'red.100': 'red.600',
+    'teal.100': 'teal.600',
+  };
+  return colorMap[deckColor] || 'blue.600';
+};
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -181,7 +209,11 @@ export default function Dashboard() {
                           alignItems="center"
                           justifyContent="center"
                         >
-                          <Icon as={Layers} boxSize={4} color="blue.600" />
+                          <Icon 
+                            as={deckIcons[deck.icon] || Layers} 
+                            boxSize={4} 
+                            color={getIconColor(deck.color || 'blue.100')} 
+                          />
                         </Box>
                         <Box>
                           <Text fontWeight="600">{deck.name}</Text>

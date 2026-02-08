@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -26,6 +26,9 @@ import {
   Shuffle,
   Maximize2,
   Minimize2,
+  Volume2,
+  Timer,
+  Pause,
 } from 'lucide-react';
 import { useDeckWithStats, useSettings } from '@/hooks/useData';
 import { db, getDueCards, getNewCards, updateTodayStats } from '@/db/database';
@@ -38,6 +41,7 @@ import {
 import { parseClozeForDisplay, type ClozePart } from '@/lib/card-utils';
 import type { StudyCard, Rating, CardCustomization } from '@/types';
 import { DEFAULT_CARD_CUSTOMIZATION } from '@/types';
+import { isAddOnEnabled, getAddOnSettings, speakText, stopSpeaking } from './AddOns';
 
 // Helper function to get customization style values
 const getCustomizationStyles = (customization: CardCustomization) => {
@@ -96,6 +100,14 @@ export default function Study() {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [cardStartTime, setCardStartTime] = useState(Date.now());
+
+  // Pomodoro timer state
+  const [pomodoroTime, setPomodoroTime] = useState(0);
+  const [pomodoroRunning, setPomodoroRunning] = useState(false);
+  const [isBreakTime, setIsBreakTime] = useState(false);
+  const pomodoroEnabled = isAddOnEnabled('pomodoro-timer');
+  const ttsEnabled = isAddOnEnabled('text-to-speech');
+  const pomodoroIntervalRef = useRef<number | null>(null);
 
   const cardBg = 'white';
   const borderColor = 'gray.200';
@@ -299,6 +311,108 @@ export default function Study() {
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, [showAnswer, handleRating, isFullscreen, toggleFullscreen]);
 
+  // Pomodoro timer effect
+  useEffect(() => {
+    if (!pomodoroEnabled) return;
+
+    const addonSettings = getAddOnSettings();
+    const workSeconds = addonSettings.pomodoroWorkMinutes * 60;
+    const breakSeconds = addonSettings.pomodoroBreakMinutes * 60;
+
+    // Auto-start if enabled
+    if (addonSettings.pomodoroAutoStart && !pomodoroRunning && pomodoroTime === 0) {
+      setPomodoroTime(workSeconds);
+      setPomodoroRunning(true);
+    }
+
+    if (pomodoroRunning) {
+      pomodoroIntervalRef.current = window.setInterval(() => {
+        setPomodoroTime(prev => {
+          if (prev <= 1) {
+            // Timer ended
+            setPomodoroRunning(false);
+            if (isBreakTime) {
+              // Break ended, start work
+              setIsBreakTime(false);
+              toast({
+                title: 'Break Over!',
+                description: 'Time to get back to studying',
+                status: 'info',
+                duration: 5000,
+              });
+              return workSeconds;
+            } else {
+              // Work ended, start break
+              setIsBreakTime(true);
+              toast({
+                title: 'Time for a Break!',
+                description: `Take a ${addonSettings.pomodoroBreakMinutes} minute break`,
+                status: 'success',
+                duration: 5000,
+              });
+              return breakSeconds;
+            }
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+
+    return () => {
+      if (pomodoroIntervalRef.current) {
+        clearInterval(pomodoroIntervalRef.current);
+      }
+    };
+  }, [pomodoroEnabled, pomodoroRunning, isBreakTime, pomodoroTime, toast]);
+
+  // TTS: Speak answer when revealed (if auto-play enabled)
+  useEffect(() => {
+    if (!ttsEnabled || !showAnswer || !currentCard) return;
+    
+    const addonSettings = getAddOnSettings();
+    if (addonSettings.ttsAutoPlay) {
+      const textToSpeak = currentCard.type === 'cloze' 
+        ? currentCard.back.replace(/\{\{c\d+::([^}]+)\}\}/g, '$1')
+        : currentCard.back;
+      speakText(textToSpeak);
+    }
+
+    return () => {
+      stopSpeaking();
+    };
+  }, [showAnswer, currentCard, ttsEnabled]);
+
+  // Format pomodoro time for display
+  const formatPomodoroTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // Toggle pomodoro timer
+  const togglePomodoro = () => {
+    if (pomodoroRunning) {
+      setPomodoroRunning(false);
+    } else {
+      if (pomodoroTime === 0) {
+        const addonSettings = getAddOnSettings();
+        setPomodoroTime(addonSettings.pomodoroWorkMinutes * 60);
+      }
+      setPomodoroRunning(true);
+    }
+  };
+
+  // Speak current card content
+  const handleSpeak = () => {
+    if (!currentCard) return;
+    const textToSpeak = showAnswer 
+      ? (currentCard.type === 'cloze' 
+          ? currentCard.back.replace(/\{\{c\d+::([^}]+)\}\}/g, '$1')
+          : currentCard.back)
+      : currentCard.front.replace(/\{\{c\d+::([^}]+)\}\}/g, '...');
+    speakText(textToSpeak);
+  };
+
   // Render cloze part with styling
   const renderClozePart = (part: ClozePart, index: number) => {
     switch (part.type) {
@@ -460,6 +574,32 @@ export default function Study() {
             </Text>
           </Box>
           <HStack spacing={3}>
+            {/* Pomodoro Timer */}
+            {pomodoroEnabled && (
+              <Tooltip label={pomodoroRunning ? 'Pause timer' : 'Start Pomodoro timer'}>
+                <Button
+                  size="sm"
+                  variant={pomodoroRunning ? 'solid' : 'ghost'}
+                  colorScheme={isBreakTime ? 'green' : pomodoroRunning ? 'orange' : 'gray'}
+                  leftIcon={<Icon as={pomodoroRunning ? Pause : Timer} boxSize={4} />}
+                  onClick={togglePomodoro}
+                >
+                  {pomodoroTime > 0 ? formatPomodoroTime(pomodoroTime) : 'Timer'}
+                </Button>
+              </Tooltip>
+            )}
+            {/* Text-to-Speech */}
+            {ttsEnabled && (
+              <Tooltip label="Read card aloud">
+                <IconButton
+                  aria-label="Read aloud"
+                  icon={<Icon as={Volume2} boxSize={4} />}
+                  size="sm"
+                  variant="ghost"
+                  onClick={handleSpeak}
+                />
+              </Tooltip>
+            )}
             <Tooltip label={isShuffled ? 'Cards are shuffled' : 'Shuffle cards'}>
               <Button
                 size="sm"
